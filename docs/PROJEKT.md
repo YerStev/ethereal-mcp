@@ -8,4 +8,4 @@ Geplantes MVP: MCP über stdio, Ethereal IMAP/TLS, Nachrichten suchen/auflisten/
 
 Abnahme des späteren MVP: Build/Typprüfung, aussagekräftige Tests für Suche und Timeout sowie lesenden Zugriff; MCP-Handshake und Toolaufrufe prüfen. Live-Test mit temporärem Ethereal-Konto getrennt dokumentieren. Niemals Tests behaupten, die nicht ausgeführt wurden.
 
-GitHub-Ziel: YerStev/ethereal-mcp, zunächst privat. Auf diesem Server ist bislang nur ein repo-spezifischer hushpen-Deploy-Key bekannt; er darf nicht für dieses Projekt umgewidmet werden. Ohne GitHub-Kontozugang kann das Remote-Repository nicht angelegt werden.
+GitHub eingerichtet am 19.10.2026: YerStev/ethereal-mcp, privat. Eigener repo-spezifischer Server-Deploy-Key mit Schreibrecht; privater Schlüssel ausschließlich auf dem Server. hushpen-Schlüssel bleibt unverändert. Erster Push und unabhängiger Rücklesevergleich sind Bestandteil der Einrichtung; Nachweise in der Serverdokumentation. MCP-Implementierung bleibt ein eigener Folgeauftrag.
