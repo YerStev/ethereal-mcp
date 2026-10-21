@@ -43,3 +43,13 @@ Handshake über den installierten CLI-Befehl geprüft. Ethereal-Live-Test bestan
 API-Kontoanlage, SMTP mit ausschließlich künstlichen Daten, stdio-Tools,
 Suche/Lesen/Warten/Timeout sowie unveränderte Flags vor/nach Lesen. Lokale
 Live-Zugangsdaten entfernt; keine Geheimnisse oder Mailinhalte eingecheckt.
+
+## Englisches Anwender-Setup am 21.10.2026
+
+Auftrag: einfache englische Setup-Anleitung und Push. README mit drei Schritten
+(Installation, MCP-Konfiguration, SMTP-Anbindung), englische Toolbeschreibungen,
+Hinweise, Fehlerausgaben und Paketbeschreibung. Interne Projektvorgaben bleiben
+deutsch. Typprüfung, Build und 13 lokale Tests erneut bestanden. Live-Test aus dem
+vorherigen Auftrag weiter dokumentiert, in diesem Auftrag nicht erneut ausgeführt.
+Bisherige private Sichtbarkeit bleibt bis zu einer ausdrücklichen Änderung bestehen;
+Nutzung setzt daher Repository-Zugriff voraus.

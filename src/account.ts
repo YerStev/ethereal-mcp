@@ -26,7 +26,7 @@ export async function provision(): Promise<Credentials> {
     const data = await response.json();
     if (data.status !== 'success') throw new Error();
     return credentials.parse(data);
-  } catch { throw new AccountError('Ethereal-Konto konnte nicht angelegt werden. Netzwerk/API prüfen oder ETHEREAL_USER und ETHEREAL_PASS setzen.'); }
+  } catch { throw new AccountError('Could not create an Ethereal account. Check network/API access or set ETHEREAL_USER and ETHEREAL_PASS.'); }
 }
 
 export class Accounts {
@@ -36,10 +36,10 @@ export class Accounts {
   get(): Promise<Credentials> {
     if (this.env.ETHEREAL_USER || this.env.ETHEREAL_PASS) {
       const parsed = credentials.safeParse({ user: this.env.ETHEREAL_USER, pass: this.env.ETHEREAL_PASS });
-      if (!parsed.success) return Promise.reject(new AccountError('ETHEREAL_USER und ETHEREAL_PASS müssen gemeinsam gesetzt sein.'));
+      if (!parsed.success) return Promise.reject(new AccountError('ETHEREAL_USER and ETHEREAL_PASS must be set together.'));
       return Promise.resolve(parsed.data);
     }
-    if (this.env.ETHEREAL_AUTO_ACCOUNT === 'false') return Promise.reject(new AccountError('Automatische Kontoerstellung deaktiviert. ETHEREAL_USER und ETHEREAL_PASS setzen.'));
+    if (this.env.ETHEREAL_AUTO_ACCOUNT === 'false') return Promise.reject(new AccountError('Automatic account creation is disabled. Set ETHEREAL_USER and ETHEREAL_PASS.'));
     if (!this.pending) this.pending = this.load().catch(error => { this.pending = undefined; throw error; });
     return this.pending;
   }
@@ -47,7 +47,7 @@ export class Accounts {
     const account = await this.get();
     return { user: account.user, smtp, imap,
       credentialsFile: this.env.ETHEREAL_USER ? null : join(this.directory, 'account.json'),
-      note: 'Passwort bleibt lokal. Testanwendung muss mit diesem Konto über Ethereal-SMTP senden; kein externer Mailempfang. Keine echten Daten verwenden.' };
+      note: 'The password stays local. Configure your test application to send through Ethereal SMTP using this account; external inbound mail is not enabled. Use synthetic data only.' };
   }
   private async read(): Promise<Credentials | undefined> {
     let file;
@@ -58,13 +58,13 @@ export class Accounts {
       return credentials.parse(JSON.parse(await file.readFile('utf8')));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
-      throw new AccountError('Kontodatei ungültig oder unsicher. account.json prüfen (nur Besitzer, Modus 600); kein automatischer Kontowechsel.');
+      throw new AccountError('Invalid or insecure account file. Check account.json (owner-only access, mode 600); the account will not be replaced automatically.');
     } finally { await file?.close(); }
   }
   private async load(): Promise<Credentials> {
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
     const stat = await lstat(this.directory);
-    if (!stat.isDirectory() || stat.isSymbolicLink() || (process.getuid && stat.uid !== process.getuid())) throw new AccountError('Unsicheres Konfigurationsverzeichnis.');
+    if (!stat.isDirectory() || stat.isSymbolicLink() || (process.getuid && stat.uid !== process.getuid())) throw new AccountError('Insecure configuration directory.');
     await chmod(this.directory, 0o700);
     const existing = await this.read();
     if (existing) return existing;
@@ -76,7 +76,7 @@ export class Accounts {
         if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
         const ready = await this.read();
         if (ready) return ready;
-        if (Date.now() >= deadline) throw new AccountError('Kontoerstellung gesperrt. Laufende Instanz abwarten; nach einem Absturz .create-lock manuell entfernen.');
+        if (Date.now() >= deadline) throw new AccountError('Account creation is locked. Wait for the other instance; after a crash, remove .create-lock manually when no account creation is running.');
         await sleep(100);
       }
     }

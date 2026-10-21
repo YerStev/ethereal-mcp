@@ -1,4 +1,4 @@
-// Opt-in; ausschließlich künstliche Daten, keine Zugangsdaten/Antwortinhalte loggen.
+// Opt-in; synthetic data only. Never log credentials or response contents.
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,7 +26,7 @@ try {
   if (info.user !== account.user || info.pass) throw new Error('account mismatch');
   const marker = `synthetic-${randomUUID()}`;
   const waiting = call('wait_for_message', { subject: marker, timeoutMs: 15000 });
-  // Handler am Promise sofort registrieren, auch wenn SMTP fehlschlägt.
+  // Attach the promise handler immediately, including when SMTP fails.
   const outcome = waiting.then(value => ({ value }), () => ({ value: null }));
   await new Promise(resolve => setTimeout(resolve, 2000));
   const sender = createTransport({ ...smtp, auth: account, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000, logger: false, debug: false });
@@ -51,8 +51,8 @@ try {
   if (!read.codes.includes('123456') || !read.links.includes('https://example.invalid/verify')) throw new Error('read failed');
   if (before !== await flags()) throw new Error('flags changed');
   if (!(await call('wait_for_message', { subject: marker, timeoutMs: 100 })).timedOut) throw new Error('timeout failed');
-  process.stdout.write('Live-Test bestanden: API-Konto, stdio, SMTP-Testmail, Suche, Lesen, Warten, Timeout und unveränderte Flags.\n');
+  process.stdout.write('Live test passed: account API, stdio, SMTP test message, search, read, wait, timeout, and unchanged flags.\n');
 } catch {
-  process.stderr.write('Live-Test fehlgeschlagen (Details aus Datenschutzgründen unterdrückt).\n');
+  process.stderr.write('Live test failed (details suppressed to protect credentials and message data).\n');
   process.exitCode = 1;
 } finally { await client?.close(); await rm(directory, { recursive: true, force: true }); }

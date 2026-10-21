@@ -26,8 +26,8 @@ test('automatic setup persists privately, reuses across instances, and hides pas
 test('explicit credentials override cache; partial env fails without provisioning', async () => {
   const create = async () => { throw new Error('must not provision'); };
   assert.deepEqual(await new Accounts('/unused', { ETHEREAL_USER: 'test', ETHEREAL_PASS: 'synthetic' }, create).get(), { user: 'test', pass: 'synthetic' });
-  await assert.rejects(new Accounts('/unused', { ETHEREAL_USER: 'test' }, create).get(), /gemeinsam/);
-  await assert.rejects(new Accounts('/unused', { ETHEREAL_AUTO_ACCOUNT: 'false' }, create).get(), /deaktiviert/);
+  await assert.rejects(new Accounts('/unused', { ETHEREAL_USER: 'test' }, create).get(), /together/);
+  await assert.rejects(new Accounts('/unused', { ETHEREAL_AUTO_ACCOUNT: 'false' }, create).get(), /disabled/);
 });
 
 test('corrupt or insecure cache never silently replaces the account', async () => {
@@ -36,10 +36,10 @@ test('corrupt or insecure cache never silently replaces the account', async () =
     const file = join(directory, 'account.json');
     await writeFile(file, 'broken', { mode: 0o600 });
     const accounts = new Accounts(directory, {}, async () => { throw new Error('must not provision'); });
-    await assert.rejects(accounts.get(), /ungültig/);
+    await assert.rejects(accounts.get(), /Invalid/);
     await writeFile(file, JSON.stringify({ user: 'fake', pass: 'synthetic' }));
     await chmod(file, 0o644);
-    await assert.rejects(accounts.get(), /unsicher/);
+    await assert.rejects(accounts.get(), /insecure/);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 

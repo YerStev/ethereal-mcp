@@ -49,9 +49,9 @@ test('read rejects stale UIDs, missing and oversized messages; closes on error',
   const { service, fake, calls } = fixture();
   await assert.rejects(service.read(10, '999'), /UIDVALIDITY/);
   fake.fetchOne = async () => ({ size: MAX_BYTES + 1, source: Buffer.alloc(0) });
-  await assert.rejects(service.read(10, '123'), /Größenlimit/);
+  await assert.rejects(service.read(10, '123'), /size limit/);
   fake.fetchOne = async () => false as never;
-  await assert.rejects(service.read(10, '123'), /nicht gefunden/);
+  await assert.rejects(service.read(10, '123'), /not found/);
   assert.equal(calls.filter(c => c[0] === 'close').length, 3);
 });
 

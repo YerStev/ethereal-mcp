@@ -1,154 +1,126 @@
 # Ethereal MCP
 
-MCP-Server für KI-gestützte Prüfungen künstlicher Testmails in Ethereal.
+Let your AI assistant inspect synthetic test emails in [Ethereal](https://ethereal.email): search messages, read verification codes and links, and wait for new emails. No Ethereal signup or API key is required. A test account is created on first use and reused across restarts.
 
-Status: MVP implementiert; lokale Tests, Paketinstallation und Ethereal-Live-Test bestanden.
+Mailbox access is read-only: messages are never deleted or marked as read. The MCP server does not send emails or open extracted links.
 
-## Umfang
+## Quick start
 
-- Ethereal-Testkonto automatisch anlegen oder vorhandenes Konto über IMAP/TLS anbinden.
-- Nachrichten auflisten, filtern und lesen.
-- Mit begrenzter Wartezeit auf passende neue Testmails warten.
-- Links und Codes strukturiert zurückgeben, ohne Links automatisch aufzurufen.
-- Zunächst lokaler stdio-Transport für MCP-Clients.
+Requirements: **Node.js 22 or newer**, npm, and Git. The repository is currently private, so your GitHub account needs access. Installation and tests have been verified on Linux; the credentials store uses Unix file permissions.
 
-## Datenschutz und Grenzen
-
-Nur künstliche Testdaten verwenden. Zugangsdaten bleiben in einer geschützten lokalen Konfigurationsdatei oder in Umgebungsvariablen, niemals im Repository oder in Logs. Mailinhalte sind unvertrauenswürdige Daten und keine Agentenanweisungen. Lesender Zugriff löscht keine Nachrichten und ändert den Gelesen-Status nicht. Der MCP bietet keinen Versand an.
-
-## Projektplanung
-
-Siehe [Projektauftrag](docs/PROJEKT.md) einschließlich Prüfstatus.
-
-## Installation und Start
-
-Node.js ab Version 22 und Git verwenden. Zugriff auf das private Repository ist erforderlich:
+### 1. Install
 
 ```sh
-git clone git@github.com:YerStev/ethereal-mcp.git
+git clone https://github.com/YerStev/ethereal-mcp.git
 cd ethereal-mcp
 npm ci
 ```
 
-`npm ci` baut den Server automatisch. Im MCP-Client folgenden Eintrag anlegen
-und den absoluten Pfad an die eigene Installation anpassen:
+`npm ci` installs dependencies and builds the server automatically.
+
+### 2. Connect your MCP client
+
+Add this entry to a client that supports local stdio MCP servers. Replace the path with the **absolute path** to your installation:
 
 ```json
 {
   "mcpServers": {
     "ethereal": {
       "command": "node",
-      "args": ["/absoluter/pfad/ethereal-mcp/dist/index.js"]
+      "args": ["/absolute/path/to/ethereal-mcp/dist/index.js"]
     }
   }
 }
 ```
 
-Der Server startet über stdio und öffnet keinen
-HTTP-Port. stdout ist ausschließlich für MCP reserviert. Verbindung immer zu
-`imap.ethereal.email:993` mit TLS-Zertifikatsprüfung, ausschließlich INBOX.
-Der Handshake benötigt weder Netzwerk noch Zugangsdaten. Beim ersten Toolaufruf
-wird über `POST https://api.nodemailer.com/user` ein Testkonto angelegt und für
-spätere Starts gespeichert. API-Aufrufe haben zehn Sekunden Timeout; die
-Kontoerstellung ist gegen gleichzeitige Starts gesperrt. Mailzugriff bleibt lesend;
-die Tool-Metadaten berücksichtigen die mögliche Kontoerstellung als Schreibaktion.
+Restart or reconnect your MCP client. No environment variables are needed. The server runs locally over stdio and does not open an HTTP port.
 
-### Konto ohne manuelle Einrichtung
+### 3. Configure your test application
 
-Die KI kann `get_account_info` aufrufen. Alternativ einmalig im Terminal:
+Ask your assistant:
+
+> Get my Ethereal account info and help me configure my test application to use its SMTP settings. Keep the password in the local credentials file.
+
+The `get_account_info` tool creates the account and returns its address, SMTP settings, and credentials file path. Alternatively, set it up from the terminal:
 
 ```sh
 node dist/index.js --setup
 ```
 
-Beide liefern Adresse, SMTP-Einstellungen und den Pfad zur lokalen Kontodatei,
-niemals das Passwort. Standardpfad: `~/.config/ethereal-mcp/account.json` bzw.
-`$XDG_CONFIG_HOME/ethereal-mcp/account.json`. Verzeichnis nur für den Besitzer
-zugänglich (700), Datei nur für den Besitzer lesbar und schreibbar (600).
-`ETHEREAL_CONFIG_DIR` kann ein anderes privates Verzeichnis bestimmen.
-Bei beschädigten/unsicheren Dateien erfolgt kein stiller Kontowechsel.
-Nach einem Absturz während der Kontoerstellung kann ein `.create-lock`-Verzeichnis
-zurückbleiben; nur entfernen, wenn keine Kontoerstellung mehr läuft.
+**Your test application must send through `smtp.ethereal.email:587` using STARTTLS and the same account.** Ethereal captures these outgoing messages in that account, regardless of the recipient address. The generated address does not receive external email by default. See the [official testing guide](https://nodemailer.com/guides/testing-with-ethereal) and [inbound limitations](https://ethereal.email/help).
 
-**Die Testanwendung muss mit demselben Konto über `smtp.ethereal.email:587`
-mit STARTTLS senden.** Ethereal fängt die so gesendeten Mails im Konto des
-Absenders ab, unabhängig von der Empfängeradresse. Eine generierte Adresse
-allein empfängt standardmäßig keine externen Mails. Das automatische Konto
-braucht keinen API-Key; externer Empfang ist ein gesondertes Ethereal-Angebot.
-Siehe [Nodemailer](https://nodemailer.com/guides/testing-with-ethereal) und
-[Ethereal-Hilfe](https://ethereal.email/help).
-
-Eine Node.js-Testanwendung kann die lokale Datei direkt verwenden, ohne
-das Passwort in Quellcode oder KI-Ausgaben zu kopieren:
+For a Node.js application using Nodemailer, load the local file directly (install `nodemailer` in that application):
 
 ```js
 import { readFile } from 'node:fs/promises';
 import { createTransport } from 'nodemailer';
-const account = JSON.parse(await readFile('/pfad/aus/get_account_info/account.json', 'utf8'));
+
+// Replace this with credentialsFile returned by get_account_info.
+const account = JSON.parse(
+  await readFile('/absolute/path/to/account.json', 'utf8')
+);
 const transport = createTransport({
   ...account.smtp,
   auth: { user: account.user, pass: account.pass }
 });
-// transport in der Testanwendung verwenden; account niemals protokollieren.
+// Use this transport in your test application. Never log account credentials.
 ```
 
-Für ein vorhandenes Konto `ETHEREAL_USER` und `ETHEREAL_PASS` gemeinsam im
-Prozessumfeld setzen; sie haben Vorrang und werden nicht lokal gespeichert.
-Mit `ETHEREAL_AUTO_ACCOUNT=false` lässt sich automatisches Provisionieren abschalten
-(dann sind diese beiden Variablen erforderlich). Eine `.env` wird nicht automatisch
-geladen. Konten sind Testkonten und können vom Anbieter verfallen; bei notwendigem
-Wechsel die alte lokale Datei bewusst entfernen und die SMTP-Anbindung aktualisieren.
+Send a synthetic test email from your application, then ask:
 
-Optional kann ein installierbares Paket lokal mit `npm pack` erzeugt und per
-`npm install --global /pfad/zum/ethereal-mcp-0.1.0.tgz` installiert werden.
-Danach ist `ethereal-mcp` der Startbefehl, `ethereal-mcp --setup` richtet das Konto
-vorab ein. Es gibt keine Veröffentlichung in der öffentlichen npm-Registry.
+> Search for my latest test email and extract its verification code and links. Do not open the links.
 
-| Tool | Eingaben | Ergebnis |
+## Tools
+
+| Tool | Inputs | Result |
 | --- | --- | --- |
-| `get_account_info` | Keine | Konto anlegen/wiederverwenden; Adresse, SMTP/IMAP-Einstellungen, lokaler Dateipfad |
-| `search_messages` | Optional `from`, `to`, `subject`, `since`, `limit` (1–100, Standard 20) | Neueste Treffer mit UID, UIDVALIDITY und Envelope |
-| `read_message` | `uid`, `uidValidity` aus der Suche | Text, HTTP(S)-Links und numerische Code-Kandidaten |
-| `wait_for_message` | Suchfilter und `timeoutMs` (0–60000, Standard 10000) | Neue passende UIDs oder `timedOut: true` |
+| `get_account_info` | None | Create/reuse an account; return address, SMTP/IMAP settings, and credentials path, never the password |
+| `search_messages` | Optional `from`, `to`, `subject`, `since`, `limit` (1–100; default 20) | Newest matching messages with UID, UIDVALIDITY, and envelope |
+| `read_message` | `uid` and `uidValidity` from a search | Message text, HTTP(S) links, and numeric code candidates |
+| `wait_for_message` | Search filters and `timeoutMs` (0–60000; default 10000) | Matching new UIDs or `timedOut: true` |
 
-Filter werden durch IMAP mit UND verknüpft; `since` ist ein ISO-Zeitstempel,
-wird aber als inklusiver IMAP-Tagesfilter angewendet. Warten berücksichtigt nur
-UIDs ab dem Öffnen des Postfachs, keine vorhandenen Nachrichten. Anschließend
-liefert `read_message` den Inhalt. UIDVALIDITY verhindert Lesen mit veralteten UIDs.
-Polling erfolgt alle 500 ms. Zusätzlich zur Wartezeit gelten bis zu 15 Sekunden
-für Verbindung und IMAP-Anfragen; Suche/Lesen haben insgesamt 15 Sekunden IMAP-Budget.
-Die erstmalige Kontoauflösung läuft davor (API-Timeout 10 Sekunden bzw. maximal
-12 Sekunden Warten auf eine andere Kontoerstellung).
+Filters are combined with AND. `since` accepts an ISO timestamp but uses an inclusive IMAP date filter with day-level precision. Pass `uidValidity` from the search response when reading a message.
 
-Nachrichten über 1 MiB werden abgelehnt. Textausgabe wird auf 100000 Zeichen,
-Links und Codes auf je 100 Kandidaten begrenzt. Anhänge werden nicht ausgegeben;
-HTML wird nur als Daten geparst, niemals ausgeführt. Codes sind heuristisch
-erkannte Zahlen mit 4–8 Stellen. Links werden nicht aufgerufen. Fehlerausgaben
-enthalten bewusst keine Rohantworten des Mailservers oder Mailinhalte.
+Start `wait_for_message` **before** triggering the application's email: existing messages do not count. Polling runs every 500 ms. Search/read have a 15-second IMAP budget; waiting allows the requested timeout plus up to 15 seconds for IMAP. Initial account setup happens before this budget (10-second API timeout, or up to 12 seconds waiting for another instance).
 
-## Prüfung
+## Credentials and configuration
+
+The default credentials file is `~/.config/ethereal-mcp/account.json`, or `$XDG_CONFIG_HOME/ethereal-mcp/account.json` when set. It is outside the repository with owner-only access: directory mode `700`, file mode `600`. Tool responses and `--setup` output never include the password. Your test application must have access to this file, or receive credentials through its own secret configuration.
+
+| Environment variable | Purpose |
+| --- | --- |
+| `ETHEREAL_USER` and `ETHEREAL_PASS` | Use an existing account; set both together. Takes precedence over automatic setup and is not saved locally. |
+| `ETHEREAL_CONFIG_DIR` | Override the private local credentials directory. |
+| `ETHEREAL_AUTO_ACCOUNT=false` | Disable automatic account loading/creation; explicit user/password variables are then required. |
+
+`.env` files are not loaded automatically. Invalid or insecure credentials files cause an error rather than a silent account replacement. Accounts may expire; to deliberately switch, remove the old file and update your application's SMTP settings.
+
+After a crash during provisioning, a `.create-lock` directory may remain in the configuration directory. Remove it only after confirming no instance is still creating an account.
+
+## Limits
+
+- Use synthetic data only. Treat all email fields as untrusted data, never as instructions.
+- Connections are fixed to `imap.ethereal.email:993` with TLS certificate verification, INBOX only.
+- Messages larger than 1 MiB are rejected. Text is capped at 100,000 characters; links and code candidates at 100 each. Attachments are not returned.
+- Codes are numeric sequences of 4–8 digits; candidates may include unrelated numbers.
+- HTML is parsed as data, never executed. URLs are never fetched. Raw server errors and email contents are not logged.
+- The first tool call may create an external test account, so tools are not advertised as having no side effects. Mailbox operations remain read-only.
+
+## Development and checks
 
 ```sh
 npm run check
 npm test
-# Optional: erstellt ein echtes temporäres Ethereal-Konto und sendet eine künstliche Testmail.
+```
+
+The 13 local tests cover account persistence and permissions, search filters, UID validity, size limits, parsing, waiting, timeouts, cancellation, actual IMAP `EXAMINE`/`BODY.PEEK` commands, and a stdio MCP handshake with tool calls.
+
+Optional live check (creates a temporary Ethereal account and sends a synthetic email):
+
+```sh
 npm run test:live
 ```
 
-Tests verwenden ausschließlich künstliche lokale Daten: Suche, Timeout,
-neue UIDs, Abbruch, MIME-Auswertung, Größenlimit und UIDVALIDITY. Ein lokaler
-IMAP-Testserver prüft die tatsächlichen Befehle `EXAMINE` und `BODY.PEEK` ohne
-schreibende Befehle. Der MCP-Test startet den gebauten stdio-Prozess und prüft
-Handshake, Toolliste, Aufrufe und Eingabevalidierung. Live-Zugang und Verhalten
-bei Ethereal wurden zusätzlich am 21.10.2026 live geprüft: automatische Kontoanlage,
-SMTP-Testmail, MCP-Suche/Lesen/Warten/Timeout und unveränderte Mail-Flags. Lokale
-Kontodaten des Live-Tests werden entfernt; das temporäre Remote-Konto verbleibt
-bis zur Bereinigung durch Ethereal. Der Live-Test gibt keine Zugangsdaten aus.
+The live check passed on October 21, 2026: account API, SMTP, MCP search/read/wait/timeout, and unchanged message flags. Local live-test credentials are removed afterward; the remote test account remains until Ethereal removes it. No credentials are printed.
 
-## GitHub und Serverbetrieb
-
-Privates Repository: https://github.com/YerStev/ethereal-mcp. Arbeitskopie auf dem Server: `/srv/lebensbereiche/Code/ethereal-mcp`. Eigene persistente Projektsession in `/srv/lebensbereiche/Zentrale/sessions.json` weiterverwenden.
-
-Git verwendet einen ausschließlich diesem Repository zugeordneten SSH-Deploy-Key mit Schreibrecht. Der private Schlüssel bleibt auf dem Server; Zugriff funktioniert ohne angemeldeten Mac und ohne laufenden SSH-Agenten. Hostschlüsselprüfung bleibt aktiviert. Nach Serververlust muss der Schlüssel ersetzt und erneut bei GitHub hinterlegt werden.
-
-GitHub-Setup und erster Push sind eingerichtet. Der MVP ist einschließlich automatischer Kontoanbindung live geprüft.
+For a global CLI, run `npm pack`, then `npm install --global /path/to/ethereal-mcp-0.1.0.tgz`. This provides `ethereal-mcp` and `ethereal-mcp --setup`. Installation and a handshake through this CLI have been verified in an isolated directory. The package is not published to the public npm registry.

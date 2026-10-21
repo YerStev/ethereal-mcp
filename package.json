@@ -1,7 +1,7 @@
 {
   "name": "ethereal-mcp",
   "version": "0.1.0",
-  "description": "MCP-Server für KI-gestützte Prüfungen künstlicher Testmails in Ethereal.",
+  "description": "Read-only MCP server for inspecting synthetic Ethereal test emails with automatic account setup.",
   "main": "dist/index.js",
   "bin": {
     "ethereal-mcp": "dist/index.js"
