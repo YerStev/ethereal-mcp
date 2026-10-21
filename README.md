@@ -6,7 +6,7 @@ Mailbox access is read-only: messages are never deleted or marked as read. The M
 
 ## Quick start
 
-Requirements: **Node.js 22 or newer**, npm, and Git. The repository is currently private, so your GitHub account needs access. Installation and tests have been verified on Linux; the credentials store uses Unix file permissions.
+Requirements: **Node.js 22 or newer**, npm, and Git. The repository is public; no GitHub account is required to clone it. Installation and tests have been verified on Linux; the credentials store uses Unix file permissions.
 
 ### 1. Install
 

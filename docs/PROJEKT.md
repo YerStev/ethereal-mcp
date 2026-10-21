@@ -53,3 +53,10 @@ deutsch. Typprüfung, Build und 13 lokale Tests erneut bestanden. Live-Test aus 
 vorherigen Auftrag weiter dokumentiert, in diesem Auftrag nicht erneut ausgeführt.
 Bisherige private Sichtbarkeit bleibt bis zu einer ausdrücklichen Änderung bestehen;
 Nutzung setzt daher Repository-Zugriff voraus.
+
+## Öffentliche Sichtbarkeit am 21.10.2026
+
+Steven hat die öffentliche Sichtbarkeit ausdrücklich beauftragt. Bei der Prüfung
+war das Repository bereits öffentlich: anonymer GitHub-API-Abruf HTTP 200 mit
+`visibility: public`. Kein Administrationszugang für eine Änderung erforderlich.
+Privat-Hinweis in der englischen README korrigiert.
