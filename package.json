@@ -1,0 +1,50 @@
+{
+  "name": "ethereal-mcp",
+  "version": "0.1.0",
+  "description": "MCP-Server für KI-gestützte Prüfungen künstlicher Testmails in Ethereal.",
+  "main": "dist/index.js",
+  "bin": {
+    "ethereal-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    ".env.example"
+  ],
+  "scripts": {
+    "test": "npm run build && tsx --test test/*.test.ts",
+    "build": "tsc",
+    "prepare": "npm run build",
+    "start": "node dist/index.js",
+    "check": "tsc --noEmit",
+    "test:live": "tsx test/live.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YerStev/ethereal-mcp.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/YerStev/ethereal-mcp/issues"
+  },
+  "homepage": "https://github.com/YerStev/ethereal-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "imapflow": "^2.5.7",
+    "mailparser": "^3.9.47",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.9.0",
+    "@types/node": "^26.6.5",
+    "@types/nodemailer": "^8.0.2",
+    "nodemailer": "^10.1.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}
